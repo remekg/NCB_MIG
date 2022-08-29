@@ -1,0 +1,1 @@
+CREATE CLUSTERED INDEX ix_Imie ON ref.Imiona(IMIE, PLEC);

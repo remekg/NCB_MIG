@@ -1,0 +1,5 @@
+select   k.NUMERY,trim(j.value) as v1 from dbo.PNA1_MiejscowosciIUlice k
+cross apply STRING_SPLIT((k.numery),',') j
+
+where
+pna ='15-232'

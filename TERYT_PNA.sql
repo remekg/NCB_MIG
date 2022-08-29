@@ -1,0 +1,61 @@
+WITH A AS (
+SELECT *
+		,TRIM(j.value) AS WYNIK
+		,CASE WHEN CHARINDEX('-',TRIM(j.value))>0 THEN
+			LEFT(REPLACE(REPLACE(REPLACE(TRIM(j.value),'(p)',''),'(n)',''),'DK','100000')
+				,CHARINDEX('-',TRIM(j.value))-1) 
+		ELSE REPLACE(REPLACE(REPLACE(TRIM(j.value),'(p)',''),'(n)',''),'DK','100000')
+		END AS PODZIELONE_OD
+		,CASE WHEN CHARINDEX('-',TRIM(j.value))>0 THEN
+			SUBSTRING(REPLACE(REPLACE(REPLACE(TRIM(j.value),'(p)',''),'(n)',''),'DK','100000')
+				,CHARINDEX('-',TRIM(j.value))+1,10) 
+		ELSE REPLACE(REPLACE(REPLACE(TRIM(j.value),'(p)',''),'(n)',''),'DK','100000')
+		END AS PODZIELONE_DO
+		,CASE WHEN RIGHT(TRIM(j.value),3)='(p)' 
+			THEN 'P'
+			WHEN RIGHT(TRIM(j.value),3)='(n)'
+			THEN 'N'
+		END AS PARZYSTOSC
+FROM CRS.dbo.PowiazanieTERYTzPNA pna
+CROSS APPLY STRING_SPLIT(pna.[PNA_NUMERY],',') j
+WHERE ZrodloDanychPNA=1
+AND CzyUsuniety=0
+)
+
+SELECT [ADRES_MIS_KEY]
+		,[TERYT_KOD_TERC]
+		,[TERYT_WOJ_NAZWA]
+		,[TERYT_WOJ_TERC]
+		,[TERYT_POW_NAZWA]
+		,[TERYT_POW_TERC]
+		,[TERYT_GM_NAZWA]
+		,[TERYT_GM_TERC]
+		,[TERYT_GM_TYP]
+		,[TERYT_NAZWA_DOD_GMINY] AS [TERYT_GM_TYP_NAZWA]
+		,[TERYT_MIEJ_NAZWA]
+		,[TERYT_MIEJ_SIMC]
+		,[TERYT_MIEJ_SIMC_POD]
+		,[TERYT_MIEJ_RODZ_SIMC]
+		,[TERYT_MIEJ_RODZ]
+		,[TERYT_ULICA_NAZWA_1]
+		,[TERYT_ULICA_NAZWA_2]
+		,[TERYT_ULICA_CECHA]
+		,[TERYT_ULICA_SYMBOL] AS  TERYT_ULICA
+		,[TERYT_ULICA_SKLEJONA_1]
+		,[TERYT_MIEJSCOWOSC]
+		,[PNA]
+		,[PNA_MIEJSCOWOSC]
+		,[PNA_ULICA]
+		,[DataOstatniejAktualizacjiTERYT]
+		,[DataOstatniejAktualizacjiPNA]
+		,[DataOstatniejAktualizacji]
+		,[PNA_NUMERY]
+		,WYNIK
+		,LEFT(PODZIELONE_OD, IIF(patindex('%[a-z]%', PODZIELONE_OD)>0, patindex('%[a-z]%', PODZIELONE_OD)-1,1000)) AS OD
+		,LEFT(PODZIELONE_DO, IIF(patindex('%[a-z]%', PODZIELONE_DO)>0, patindex('%[a-z]%', PODZIELONE_DO)-1,1000)) AS DO
+		,PARZYSTOSC
+INTO dbo.TERYT_PNA
+FROM A
+
+
+
