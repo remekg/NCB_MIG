@@ -39,7 +39,7 @@ TRUNCATE TABLE en_ob.PH_GRUPA
 INSERT INTO en_ob.PH_GRUPA
 (
     [KEY], [BPEXT],  [NAMEGRP1], [NAMEGRP2],  [Nazwa], [TELNUMBER], [TELEXTENS], [TELKOM],
-     [FAXNUMBER], [SMTPADDR], [IDTYPE], [IDNUMBER], [TAXNUM], [PESEL_1], [PESEL_2]
+     [FAXNUMBER], [SMTPADDR], [IDTYPE], [IDNUMBER], [TAXNUM], [PESEL_1], [PESEL_2], Grupa_Checksum
 )
 SELECT
      [KEY] = Klucz_PH
@@ -57,6 +57,7 @@ SELECT
     ,[TAXNUM] = nip
     ,[PESEL_1] = G.pesel_1
     ,[PESEL_2] = G.pesel_2
+    ,[Grupa_Checksum] = P.Grupa_Checksum
 FROM en.Stg_PH AS P
 CROSS APPLY dbo.udfgrupa(P.nazwa, P.pesel, N' ') AS G
 WHERE P.CzyMig > 0 AND P.Sugerowany_typ = 3

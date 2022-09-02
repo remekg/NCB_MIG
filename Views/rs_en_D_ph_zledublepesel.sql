@@ -1,0 +1,65 @@
+USE NCB_MIG;
+--DYSTRYBUCJA
+--OSOBY FIZYCZNE
+--Zdublowane pesele
+
+
+ 
+SELECT IDNUMBER
+INTO ##D_Duble
+FROM en_dys.PH_Osoba
+WHERE IDNUMBER IS NOT NULL
+GROUP BY IDNUMBER
+HAVING COUNT(DISTINCT [KEY]) > 1
+
+
+
+SELECT D.IDNUMBER
+FROM ##D_Duble AS D
+JOIN en_dys.PH_Osoba AS DO
+    ON D.IDNUMBER = DO.IDNUMBER
+GROUP BY D.IDNUMBER
+HAVING 
+    COUNT(
+        DISTINCT CONVERT(
+            NVARCHAR(255), 
+            HASHBYTES(
+                'SHA2_256', 
+                CONCAT_WS('|', NAMEFIRST, NAMEMIDDLE, NAMELAST)
+                ),
+        2)
+     ) > 1
+
+--Obrót
+SELECT IDNUMBER
+INTO ##O_Duble
+FROM en_ob.PH_Osoba
+WHERE IDNUMBER IS NOT NULL
+GROUP BY IDNUMBER
+HAVING COUNT(DISTINCT [KEY]) > 1
+
+
+
+SELECT O.IDNUMBER
+FROM ##O_Duble AS O
+JOIN en_ob.PH_Osoba AS OO
+    ON O.IDNUMBER = OO.IDNUMBER
+GROUP BY O.IDNUMBER
+HAVING 
+    COUNT(
+        DISTINCT CONVERT(
+            NVARCHAR(255), 
+            HASHBYTES(
+                'SHA2_256', 
+                CONCAT_WS('|', NAMEFIRST, NAMELAST)
+                ),
+        2)
+     ) > 1
+
+
+
+DROP TABLE IF EXISTS ##D_Duble
+DROP TABLE IF EXISTS ##O_Duble
+
+
+

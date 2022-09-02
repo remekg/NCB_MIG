@@ -1,0 +1,39 @@
+TODO Step 0 - Deduplikacja grup
+TODO Step 1 - Obsługa korespow 
+TODO Step 2 - Wyliczenie gold rekordu
+TODO Step 3 - Zaproponowanie lidera
+TODO Step 4 - Zalozenie mapy do kont umowy
+
+
+
+Deduplikacja grup założenia
+
+Nazwa identyczna
+Adres identyczny
+Pesel identyczny
+
+
+
+
+
+Wyliczenie pola adres_koresp_hash
+
+Obsługa korespow założenia :
+A Jesli koresp jest pusty to pole do koresp = 0
+
+
+
+
+B jesli nazwa = kor_nazwa i adres = kor_adres 
+    to pole do_koresp = 0 
+C jesli nazwa <> kor_nazwa :
+    to pole do koresp = 1 
+D jesli liczba adresow koresp > 1 :
+    to pole do koresp = 2
+
+Wyliczenie gold rekordu punktacja :
+    zawiera G_  = -1000
+    ma teryt miejscowosci - 100
+    ma teryt ulicy - 100
+    adres zgodny z 
+

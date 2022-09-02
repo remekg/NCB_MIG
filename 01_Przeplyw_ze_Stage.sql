@@ -63,7 +63,7 @@ LEFT JOIN Meta.dbo.SystemyZrodlowe sz
 ON kl.SystemZrodlowyId = sz.Id
 WHERE SystemZrodlowyId > 9
 
-INSERT INTO NCB_MIG.en.Stg_PPE ([ppeid], [przylaczeid], [nrpl], [ulica], [miejscowosc], [gus], [rej], [strona], [ppe], [npp], [mscgus], [pdgrp], [pum04], [otp], [kod_p], [adres_poczty], [dom], [mieszk], [dinit], [dend], [tar], [is_koncesja], [nrpr], [SystemZrodlowyId], [rej_src], [nrpre], [id_dos], [skasowany], [potrzeby], [ID_ODBIORCA_TPA], [mc_roz], [PUM01], [PUM02], [PUM03], [PUM05], [PUM06], [PUM07], [PUM08], [PUM09], [PUM10], [PUM11], [PUM12], [DataImportu], [epr], [nr_um_przes], [data_um_przes], [data_wyg_um_przes], [cennik], [dpocz], [cennik2], [cennikd], [id_spr_rezer], [notes], [dpor], [dkor], [Przylacz_skasowany], [jr], [Klucz_PH], [CzyMIG], [PGE], [N_Systemu], [Oddzial], [Rejon])
+INSERT INTO NCB_MIG.en.Stg_PPE ([ppeid], [przylaczeid], [nrpl], [ulica], [miejscowosc], [gus], [rej], [strona], [ppe], [npp], [mscgus], [pdgrp], [pum04], [otp], [kod_p], [adres_poczty], [dom], [mieszk], [dinit], [dend], [tar], [is_koncesja], [nrpr], [SystemZrodlowyId], [rej_src], [nrpre], [id_dos], [skasowany], [potrzeby], [ID_ODBIORCA_TPA], [mc_roz], [PUM01], [PUM02], [PUM03], [PUM05], [PUM06], [PUM07], [PUM08], [PUM09], [PUM10], [PUM11], [PUM12], [DataImportu], [epr], [nr_um_przes], [data_um_przes], [data_wyg_um_przes], [cennik], [dpocz], [cennik2], [cennikd], [id_spr_rezer], [notes], [dpor], [dkor], [Przylacz_skasowany], [jr], [Klucz_PH], [CzyMIG], [PGE], [N_Systemu], [Oddzial], [Rejon], CzyPPE)
 SELECT 
 	 [ppeid] = [ppeid],
 	 [przylaczeid] =  [przylaczeid],
@@ -127,7 +127,8 @@ SELECT
 	 PGE = NULL,
 	 sz.NazwaSystemu AS N_Systemu,
 	 sz.Oddzial,
-	 re.nazwa AS Rejon
+	 re.nazwa AS Rejon,
+	 CzyPPE = RANK() OVER (PARTITION BY ppe ORDER BY ISNULL(dend,'99991231') DESC)
 FROM Stage.dbo.EN_PPE ppe
 LEFT JOIN Meta.dbo.SystemyZrodlowe sz
 ON ppe.SystemZrodlowyId = sz.Id

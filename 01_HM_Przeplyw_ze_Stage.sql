@@ -259,7 +259,7 @@ DROP TABLE IF EXISTS ##aktywni18;
 
 UPDATE NCB_MIG.hm.Stg_PH
 SET CzyMIG = 3 
-WHERE CAST(saldo as decimal) > 0
+WHERE CAST(saldo as decimal) <> 0
 AND Czymig = 0
 
 --Wypelnianie kolumny PGE w PPE informacj¹ o przypisanie danych do obszaru (O, D i OD) zalo¿enia:
@@ -268,62 +268,62 @@ AND Czymig = 0
 --JR=3 obrót
 --JR=1 i otp=0 wspólne
 ;
-WITH A AS
-(
-SELECT  otp,  dy.PGE_D, ppe.PGE, id_dos
-	--,CASE	WHEN otp <> 1 AND dy.PGE_D = 1
-	--		THEN 'OD'
-	--		WHEN otp <> 1 AND (dy.PGE_D IS NULL OR dy.PGE_D = 0) 
-	--		THEN 'O'
-	--		WHEN otp = 1 AND dy.PGE_D = 1
-	--		THEN 'D'
-	--END AS PGE_EN
-	,CASE	WHEN jr = 1 AND otp = 0
-			THEN 'OD'
-			WHEN jr = 2
-			THEN 'D'
-			WHEN jr = 3
-			THEN 'O'
-			WHEN jr = 1 AND otp = 1
-			THEN 'O'
-			ELSE 'E'
-	END AS PGE_EN
-FROM NCB_MIG.hm.Stg_PPE ppe
-	LEFT JOIN NCB_MIG.ref.Dystrybutor dy
-ON ppe.SystemZrodlowyId = dy.SystemZrodlowyID 
-	AND ppe.id_dos = dy.id
---WHERE CzyMIG > 0
-)
+--WITH A AS
+--(
+--SELECT  otp,  dy.PGE_D, ppe.PGE, id_dos
+--	--,CASE	WHEN otp <> 1 AND dy.PGE_D = 1
+--	--		THEN 'OD'
+--	--		WHEN otp <> 1 AND (dy.PGE_D IS NULL OR dy.PGE_D = 0) 
+--	--		THEN 'O'
+--	--		WHEN otp = 1 AND dy.PGE_D = 1
+--	--		THEN 'D'
+--	--END AS PGE_EN
+--	,CASE	WHEN jr = 1 AND otp = 0
+--			THEN 'OD'
+--			WHEN jr = 2
+--			THEN 'D'
+--			WHEN jr = 3
+--			THEN 'O'
+--			WHEN jr = 1 AND otp = 1
+--			THEN 'O'
+--			ELSE 'E'
+--	END AS PGE_EN
+--FROM NCB_MIG.hm.Stg_PPE ppe
+--	LEFT JOIN NCB_MIG.ref.Dystrybutor dy
+--ON ppe.SystemZrodlowyId = dy.SystemZrodlowyID 
+--	AND ppe.id_dos = dy.id
+----WHERE CzyMIG > 0
+--)
 
-UPDATE A
-SET PGE = PGE_EN 
-;
---Wypelnianie kolumny PGE w PH informacj¹ o przypisanie danych do obszaru (O, D i OD)
-WITH A AS(
-SELECT	ppe.Klucz_PH,
-		CASE WHEN STRING_AGG(ppe.PGE, ' ') LIKE '%D%' AND STRING_AGG(ppe.PGE, ' ') LIKE '%O%'
-				THEN 'OD'
-			WHEN STRING_AGG(ppe.PGE, ' ') LIKE '%D%'
-				THEN 'D'
-			WHEN STRING_AGG(ppe.PGE, ' ') LIKE '%O%'
-				THEN 'O'
-		END AS PGE_EN,
-		ph.PGE
-FROM NCB_MIG.hm.Stg_PPE ppe
-JOIN NCB_MIG.hm.Stg_PH ph
-ON ppe.Klucz_PH = ph.Klucz_PH
---WHERE ppe.CzyMIG > 0 AND ph.CzyMIG > 0
-GROUP BY ppe.Klucz_PH, ph.PGE
-)
+--UPDATE A
+--SET PGE = PGE_EN 
+--;
+----Wypelnianie kolumny PGE w PH informacj¹ o przypisanie danych do obszaru (O, D i OD)
+--WITH A AS(
+--SELECT	ppe.Klucz_PH,
+--		CASE WHEN STRING_AGG(ppe.PGE, ' ') LIKE '%D%' AND STRING_AGG(ppe.PGE, ' ') LIKE '%O%'
+--				THEN 'OD'
+--			WHEN STRING_AGG(ppe.PGE, ' ') LIKE '%D%'
+--				THEN 'D'
+--			WHEN STRING_AGG(ppe.PGE, ' ') LIKE '%O%'
+--				THEN 'O'
+--		END AS PGE_EN,
+--		ph.PGE
+--FROM NCB_MIG.hm.Stg_PPE ppe
+--JOIN NCB_MIG.hm.Stg_PH ph
+--ON ppe.Klucz_PH = ph.Klucz_PH
+----WHERE ppe.CzyMIG > 0 AND ph.CzyMIG > 0
+--GROUP BY ppe.Klucz_PH, ph.PGE
+--)
 
-UPDATE NCB_MIG.hm.Stg_PH
-SET PGE = 
-(SELECT PGE_EN FROM A WHERE NCB_MIG.hm.Stg_PH.Klucz_PH = A.Klucz_PH)
+--UPDATE NCB_MIG.hm.Stg_PH
+--SET PGE = 
+--(SELECT PGE_EN FROM A WHERE NCB_MIG.hm.Stg_PH.Klucz_PH = A.Klucz_PH)
 
-UPDATE NCB_MIG.hm.Stg_PH
-SET PGE = 'O'
-WHERE jr = 1 AND PGE IS NULL
-;
+--UPDATE NCB_MIG.hm.Stg_PH
+--SET PGE = 'O'
+--WHERE jr = 1 AND PGE IS NULL
+--;
 --czyszczenie NIPów
 
 UPDATE NCB_MIG.hm.Stg_PH
@@ -341,27 +341,27 @@ WHERE EXISTS(SELECT 1 FROM ref.FIRMY f WHERE f.NIP = REPLACE(NCB_MIG.hm.Stg_PH.n
 --ustalenie typu 1-osoba fizyczna , 2-firma, 3-grupa. Pole ty_konsumenta 1-konsument, 2-quasi-konsument, 3-niekonsument 
 
 --PO CEIDG
-UPDATE NCB_MIG.hm.Stg_PH
-	SET SUGEROWANY_TYP = 2
-	WHERE (typ_konsumenta > 1 OR typ_konsumenta = 0) 
-	AND CEIDG = 1
-	AND SUGEROWANY_TYP IS NULL 
-	AND CzyMIG > 0
+--UPDATE NCB_MIG.hm.Stg_PH
+--	SET SUGEROWANY_TYP = 2
+--	WHERE (typ_konsumenta > 1 OR typ_konsumenta = 0) 
+--	AND CEIDG = 1
+--	AND SUGEROWANY_TYP IS NULL 
+--	AND CzyMIG > 0
 
---PO FUNKCJI dbo.CzyFirma
-UPDATE NCB_MIG.hm.Stg_PH
-	SET SUGEROWANY_TYP = 2
-	WHERE (typ_konsumenta > 1 OR typ_konsumenta = 0) 
-	AND SUGEROWANY_TYP IS NULL 
-	AND CzyMIG > 0	
-	AND dbo.CzyFirma(regon, nazwa, typ_konsumenta) = 2
+----PO FUNKCJI dbo.CzyFirma
+--UPDATE NCB_MIG.hm.Stg_PH
+--	SET SUGEROWANY_TYP = 2
+--	WHERE (typ_konsumenta > 1 OR typ_konsumenta = 0) 
+--	AND SUGEROWANY_TYP IS NULL 
+--	AND CzyMIG > 0	
+--	AND dbo.CzyFirma(regon, nazwa, typ_konsumenta) = 2
 
---PO Funkcji [dbo].[CzyOsobalubGrupa]
-UPDATE NCB_MIG.hm.Stg_PH
-	SET SUGEROWANY_TYP = [dbo].[CzyOsobalubGrupa](nazwa)
-	WHERE (typ_konsumenta = 1 OR typ_konsumenta = 0) 
-	AND SUGEROWANY_TYP IS NULL 
-	AND CzyMIG > 0	
+----PO Funkcji [dbo].[CzyOsobalubGrupa]
+--UPDATE NCB_MIG.hm.Stg_PH
+--	SET SUGEROWANY_TYP = [dbo].[CzyOsobalubGrupa](nazwa)
+--	WHERE (typ_konsumenta = 1 OR typ_konsumenta = 0) 
+--	AND SUGEROWANY_TYP IS NULL 
+--	AND CzyMIG > 0	
 	
 
 
@@ -375,12 +375,12 @@ UPDATE NCB_MIG.hm.Stg_PH
 --			ELSE 4
 --	END
 
-UPDATE hm.stg_PH
-SET ZGODNY_KORESP = 1
-WHERE 	len(kor_nazwa) > 0	
-		AND TRIM(dbo.UsuwanieNieliter(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(nazwa,'SP. KOMANDYTOWA', 'SP. K.'),'SPÓ£KA KOMANDYTOWA', 'SP. K.'),'PRZEDSIÊBIORSTWO HANDLOWO US£UGOWE','P.H.U'),'SPÓ£KA AKCYJNA','S.A.'),'SPÓ£KA Z O.O.','SP. Z O.O.'),'SPÓ£KA Z OGRANICZON¥ ODPOWIEDZIALNOŒCI¥','SP. Z O.O.'))) 
-			= TRIM(dbo.UsuwanieNieliter(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(kor_nazwa,'SP. KOMANDYTOWA', 'SP. K.'),'SPÓ£KA KOMANDYTOWA', 'SP. K.'),'PRZEDSIÊBIORSTWO HANDLOWO US£UGOWE','P.H.U'),'SPÓ£KA AKCYJNA','S.A.'),'SPÓ£KA Z O.O.','SP. Z O.O.'),'SPÓ£KA Z OGRANICZON¥ ODPOWIEDZIALNOŒCI¥','SP. Z O.O.'))) 
-		AND kodpocztowy = kor_kod_poczt
-		AND miejscowosc = kor_miejsc
-		AND ulica = kor_ulica
-		AND nrdomu = kor_dom
+--UPDATE hm.stg_PH
+--SET ZGODNY_KORESP = 1
+--WHERE 	len(kor_nazwa) > 0	
+--		AND TRIM(dbo.UsuwanieNieliter(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(nazwa,'SP. KOMANDYTOWA', 'SP. K.'),'SPÓ£KA KOMANDYTOWA', 'SP. K.'),'PRZEDSIÊBIORSTWO HANDLOWO US£UGOWE','P.H.U'),'SPÓ£KA AKCYJNA','S.A.'),'SPÓ£KA Z O.O.','SP. Z O.O.'),'SPÓ£KA Z OGRANICZON¥ ODPOWIEDZIALNOŒCI¥','SP. Z O.O.'))) 
+--			= TRIM(dbo.UsuwanieNieliter(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(kor_nazwa,'SP. KOMANDYTOWA', 'SP. K.'),'SPÓ£KA KOMANDYTOWA', 'SP. K.'),'PRZEDSIÊBIORSTWO HANDLOWO US£UGOWE','P.H.U'),'SPÓ£KA AKCYJNA','S.A.'),'SPÓ£KA Z O.O.','SP. Z O.O.'),'SPÓ£KA Z OGRANICZON¥ ODPOWIEDZIALNOŒCI¥','SP. Z O.O.'))) 
+--		AND kodpocztowy = kor_kod_poczt
+--		AND miejscowosc = kor_miejsc
+--		AND ulica = kor_ulica
+--		AND nrdomu = kor_dom
