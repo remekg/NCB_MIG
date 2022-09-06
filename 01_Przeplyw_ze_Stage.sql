@@ -1,7 +1,7 @@
 /* **********************************************
 Data :20.07.2022
 Obiekt biznesowy : Punkty i Parner Handlowy
-Opis : przeladowanie tabel ze stage i wype³nianie dodatkowych kolumn (np CzyMIG)
+Opis : przeladowanie tabel ze stage i wypeÅ‚nianie dodatkowych kolumn (np CzyMIG)
 
 **************************************************
 */ 
@@ -63,7 +63,7 @@ LEFT JOIN Meta.dbo.SystemyZrodlowe sz
 ON kl.SystemZrodlowyId = sz.Id
 WHERE SystemZrodlowyId > 9
 
-INSERT INTO NCB_MIG.en.Stg_PPE ([ppeid], [przylaczeid], [nrpl], [ulica], [miejscowosc], [gus], [rej], [strona], [ppe], [npp], [mscgus], [pdgrp], [pum04], [otp], [kod_p], [adres_poczty], [dom], [mieszk], [dinit], [dend], [tar], [is_koncesja], [nrpr], [SystemZrodlowyId], [rej_src], [nrpre], [id_dos], [skasowany], [potrzeby], [ID_ODBIORCA_TPA], [mc_roz], [PUM01], [PUM02], [PUM03], [PUM05], [PUM06], [PUM07], [PUM08], [PUM09], [PUM10], [PUM11], [PUM12], [DataImportu], [epr], [nr_um_przes], [data_um_przes], [data_wyg_um_przes], [cennik], [dpocz], [cennik2], [cennikd], [id_spr_rezer], [notes], [dpor], [dkor], [Przylacz_skasowany], [jr], [Klucz_PH], [CzyMIG], [PGE], [N_Systemu], [Oddzial], [Rejon], CzyPPE)
+INSERT INTO NCB_MIG.en.Stg_PPE ([ppeid], [przylaczeid], [nrpl], [ulica], [miejscowosc], [gus], [rej], [strona], [ppe], [npp], [mscgus], [pdgrp], [pum04], [otp], [kod_p], [adres_poczty], [dom], [mieszk], [dinit], [dend], [tar], [is_koncesja], [nrpr], [SystemZrodlowyId], [rej_src], [nrpre], [id_dos], [skasowany], [potrzeby], [ID_ODBIORCA_TPA], [mc_roz], [PUM01], [PUM02], [PUM03], [PUM05], [PUM06], [PUM07], [PUM08], [PUM09], [PUM10], [PUM11], [PUM12], [DataImportu], [epr], [nr_um_przes], [data_um_przes], [data_wyg_um_przes], [cennik], [dpocz], [cennik2], [cennikd], [id_spr_rezer], [notes], [dpor], [dkor], [Przylacz_skasowany], [jr], [Klucz_PH],[KLUCZ_PPE], [CzyMIG], [PGE], [N_Systemu], [Oddzial], [Rejon], CzyPPE)
 SELECT 
 	 [ppeid] = [ppeid],
 	 [przylaczeid] =  [przylaczeid],
@@ -123,12 +123,13 @@ SELECT
 	 [Przylacz_skasowany] =  [Przylacz_skasowany],
 	 jr =  ppe.jr,
 	 Klucz_PH = CONCAT(ppe.SystemZrodlowyId,'_', ppe.jr, '_90', nrpl),
+	 KLUCZ_PPE = CONCAT(ppe.SystemZrodlowyId, '_' , ppe),
 	 CzyMIG = 0,
 	 PGE = NULL,
 	 sz.NazwaSystemu AS N_Systemu,
 	 sz.Oddzial,
 	 re.nazwa AS Rejon,
-	 CzyPPE = RANK() OVER (PARTITION BY ppe ORDER BY ISNULL(dend,'99991231') DESC)
+	 CzyPPE = RANK() OVER (PARTITION BY ppe ORDER BY skasowany asc, ISNULL(dend,'99991231') DESC)
 FROM Stage.dbo.EN_PPE ppe
 LEFT JOIN Meta.dbo.SystemyZrodlowe sz
 ON ppe.SystemZrodlowyId = sz.Id
@@ -169,7 +170,7 @@ SET CzyMIG =
 					AND (dend >= DATEADD(MONTH, -18, GETDATE()) 
 						OR dkor >= DATEADD(MONTH, -18, GETDATE())) 
 		THEN 2
-		--3 jak bêdzie algorytm rozliczeñ
+		--3 jak bÄ™dzie algorytm rozliczeÅ„
 	ELSE 0
 	END
 
@@ -180,7 +181,7 @@ SET CzyMIG =
 		AND ppe.CzyMIG > 0
 	),0)
 ;
---ustalenie CzyMIG dla otwartych rozrachunków
+--ustalenie CzyMIG dla otwartych rozrachunkÃ³w
 WITH A AS(
 select DISTINCT
 		kl.Klucz_PH AS Klucz
@@ -193,7 +194,7 @@ on kl.nrpl = concat('',r.nr_kontrah)
 and b.rejon_nr = kl.nrrejonu
 and 
   CAST(CASE WHEN r.SystemZrodlowyId = 1 
-				and b.rejon_nr = 12 
+				and b.rejon_nr = '12' 
 				and nr_kontrah not in (select nrw_kontrahenta from crs.dbo.[mapaKontrahentHM]) 
 			THEN 10 /* PG 2016-02-01 Obsluga wyjatku dla kontrahentow SzId =1 rejon = 12, ktorych nie ma w Energosie */
             WHEN r.SystemZrodlowyId = 4 
@@ -204,7 +205,7 @@ and
 WHERE 1=1
 
     AND ((r.kwota >= 0 AND r.strona = 'W') OR (r.kwota < 0 AND r.strona = 'M'))
-    /* pomija kary umowne do których zosta³a wystawiona korekta */
+    /* pomija kary umowne do ktÃ³rych zostaÅ‚a wystawiona korekta */
     AND CAST(r.nr_pozycji AS varchar(12)) + CAST(r.nr_kontrah AS varchar(12)) NOT IN 
                     (SELECT distinct
                     CAST(r3.nr_pozycji AS varchar(12)) + CAST(r3.nr_kontrah AS varchar(12)) AS poz_kontrah
@@ -229,11 +230,11 @@ FROM A
 WHERE Klucz = Klucz_PH
 AND Czymig = 0
 
---Wypelnianie kolumny PGE w PPE informacj¹ o przypisanie danych do obszaru (O, D i OD) zalo¿enia:
---JR=1 i otp=1 obrót
+--Wypelnianie kolumny PGE w PPE informacjÄ… o przypisanie danych do obszaru (O, D i OD) zaloÅ¼enia:
+--JR=1 i otp=1 obrÃ³t
 --JR=2 dystrybucyjne
---JR=3 obrót
---JR=1 i otp=0 wspólne
+--JR=3 obrÃ³t
+--JR=1 i otp=0 wspÃ³lne
 ;
 WITH A AS
 (
@@ -272,7 +273,7 @@ ON ppe.SystemZrodlowyId = dy.SystemZrodlowyID
 UPDATE A
 SET PGE = PGE_EN 
 ;
---Wypelnianie kolumny PGE w PH informacj¹ o przypisanie danych do obszaru (O, D i OD)
+--Wypelnianie kolumny PGE w PH informacjÄ… o przypisanie danych do obszaru (O, D i OD)
 WITH A AS(
 SELECT	ppe.Klucz_PH,
 		CASE WHEN STRING_AGG(ppe.PGE, ' ') LIKE '%D%' AND STRING_AGG(ppe.PGE, ' ') LIKE '%O%'
@@ -298,14 +299,14 @@ UPDATE NCB_MIG.en.Stg_PH
 SET PGE = 'O'
 WHERE jr = 1 AND PGE IS NULL
 ;
---czyszczenie NIPów
+--czyszczenie NIPÃ³w
 
 UPDATE NCB_MIG.en.Stg_PH
 SET nip = REPLACE(dbo.UsuwanieNieliter(nip),' ','')
 
 ;
 
---uzupe³nienie obecnoœci w bazach dzia³¹lnoœci gospodarczej
+--uzupeÅ‚nienie obecnoÅ›ci w bazach dziaÅ‚alnoÅ›ci gospodarczej
 
 UPDATE NCB_MIG.en.Stg_PH
 SET CEIDG = 1
@@ -328,7 +329,7 @@ UPDATE NCB_MIG.en.Stg_PH
 	WHERE (typ_konsumenta > 1 OR typ_konsumenta = 0) 
 	AND SUGEROWANY_TYP IS NULL 
 	AND CzyMIG > 0	
-	AND dbo.CzyFirma(regon, nazwa, typ_konsumenta) = 2
+	AND dbo.CzyFirma(regon, nazwa) = 2
 
 --PO Funkcji [dbo].[CzyOsobalubGrupa]
 UPDATE NCB_MIG.en.Stg_PH
@@ -352,9 +353,33 @@ UPDATE NCB_MIG.en.Stg_PH
 UPDATE en.stg_PH
 SET ZGODNY_KORESP = 1
 WHERE 	len(kor_nazwa) > 0	
-		AND TRIM(dbo.UsuwanieNieliter(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(nazwa,'SP. KOMANDYTOWA', 'SP. K.'),'SPÓ£KA KOMANDYTOWA', 'SP. K.'),'PRZEDSIÊBIORSTWO HANDLOWO US£UGOWE','P.H.U'),'SPÓ£KA AKCYJNA','S.A.'),'SPÓ£KA Z O.O.','SP. Z O.O.'),'SPÓ£KA Z OGRANICZON¥ ODPOWIEDZIALNOŒCI¥','SP. Z O.O.'))) 
-			= TRIM(dbo.UsuwanieNieliter(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(kor_nazwa,'SP. KOMANDYTOWA', 'SP. K.'),'SPÓ£KA KOMANDYTOWA', 'SP. K.'),'PRZEDSIÊBIORSTWO HANDLOWO US£UGOWE','P.H.U'),'SPÓ£KA AKCYJNA','S.A.'),'SPÓ£KA Z O.O.','SP. Z O.O.'),'SPÓ£KA Z OGRANICZON¥ ODPOWIEDZIALNOŒCI¥','SP. Z O.O.'))) 
+		AND TRIM(dbo.UsuwanieNieliter(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(nazwa,'SP. KOMANDYTOWA', 'SP. K.'),'SPÃ“ÅKA KOMANDYTOWA', 'SP. K.'),'PRZEDSIÄ˜BIORSTWO HANDLOWO USÅUGOWE','P.H.U'),'SPÃ“ÅKA AKCYJNA','S.A.'),'SPÃ“ÅKA Z O.O.','SP. Z O.O.'),'SPÃ“ÅKA Z OGRANICZONÄ„ ODPOWIEDZIALNOÅšCIÄ„','SP. Z O.O.'))) 
+			= TRIM(dbo.UsuwanieNieliter(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(kor_nazwa,'SP. KOMANDYTOWA', 'SP. K.'),'SPÃ“ÅKA KOMANDYTOWA', 'SP. K.'),'PRZEDSIÄ˜BIORSTWO HANDLOWO USÅUGOWE','P.H.U'),'SPÃ“ÅKA AKCYJNA','S.A.'),'SPÃ“ÅKA Z O.O.','SP. Z O.O.'),'SPÃ“ÅKA Z OGRANICZONÄ„ ODPOWIEDZIALNOÅšCIÄ„','SP. Z O.O.'))) 
 		AND kodpocztowy = kor_kod_poczt
 		AND miejscowosc = kor_miejsc
 		AND ulica = kor_ulica
 		AND nrdomu = kor_dom
+
+/** UzupeÅ‚nienie LIDERA PPE dla sumatorÃ³w (fikcyjne umowy w HM) npr = 0 **/
+;
+WITH A AS
+(SELECT
+CASE WHEN MIN(nrpr) OVER (PARTITION BY 
+		CONCAT('998',rej,RIGHT('00000'+cast(strona as varchar(20)), 5)), SystemzrodlowyID, JR  ORDER BY nrpr)=0
+		THEN (SELECT TOP(1) CONCAT(SystemZrodlowyID, '_' , ppe) FROM en.Stg_PPE ppe2 
+			WHERE ppe2.SystemZrodlowyId = en.Stg_PPE.SystemZrodlowyId
+			AND en.Stg_PPE.Rejon = ppe2.Rejon
+			AND en.Stg_PPE.jr = ppe2.jr
+			AND en.Stg_PPE.strona = ppe2.strona
+		ORDER BY nrpr)
+		ELSE CONCAT(SystemZrodlowyID, '_' , ppe) END AS LIDER_TMP,
+		KLUCZ_PPE AS KLUCZ_PPE_TMP
+FROM en.Stg_PPE
+WHERE CzyMIG >0
+	AND CzyPPE = 1
+)
+
+update en.Stg_PPE 
+SET LIDER = LIDER_TMP
+FROM A
+WHERE KLUCZ_PPE = KLUCZ_PPE_TMP

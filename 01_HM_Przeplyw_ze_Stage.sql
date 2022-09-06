@@ -1,7 +1,7 @@
 /* **********************************************
 Data :20.07.2022
 Obiekt biznesowy : Punkty i Parner Handlowy
-Opis : przeladowanie tabel ze stage i wype³nianie dodatkowych kolumn (np CzyMIG)
+Opis : przeladowanie tabel ze stage i wypeï¿½nianie dodatkowych kolumn (np CzyMIG)
 
 **************************************************
 */ 
@@ -201,7 +201,7 @@ SET PGE = NULL
 --					AND (dend >= DATEADD(MONTH, -18, GETDATE()) 
 --						OR dkor >= DATEADD(MONTH, -18, GETDATE())) 
 --		THEN 2
---		--3 jak bêdzie algorytm rozliczeñ
+--		--3 jak bï¿½dzie algorytm rozliczeï¿½
 --	ELSE 0
 --	END
 
@@ -262,11 +262,11 @@ SET CzyMIG = 3
 WHERE CAST(saldo as decimal) <> 0
 AND Czymig = 0
 
---Wypelnianie kolumny PGE w PPE informacj¹ o przypisanie danych do obszaru (O, D i OD) zalo¿enia:
---JR=1 i otp=1 obrót
+--Wypelnianie kolumny PGE w PPE informacjÄ… o przypisanie danych do obszaru (O, D i OD) zaloÅ¼enia:
+--JR=1 i otp=1 obrÃ³t
 --JR=2 dystrybucyjne
---JR=3 obrót
---JR=1 i otp=0 wspólne
+--JR=3 obrÃ³t
+--JR=1 i otp=0 wspÃ³lne
 ;
 --WITH A AS
 --(
@@ -298,7 +298,7 @@ AND Czymig = 0
 --UPDATE A
 --SET PGE = PGE_EN 
 --;
-----Wypelnianie kolumny PGE w PH informacj¹ o przypisanie danych do obszaru (O, D i OD)
+----Wypelnianie kolumny PGE w PH informacjÄ… o przypisanie danych do obszaru (O, D i OD)
 --WITH A AS(
 --SELECT	ppe.Klucz_PH,
 --		CASE WHEN STRING_AGG(ppe.PGE, ' ') LIKE '%D%' AND STRING_AGG(ppe.PGE, ' ') LIKE '%O%'
@@ -324,14 +324,14 @@ AND Czymig = 0
 --SET PGE = 'O'
 --WHERE jr = 1 AND PGE IS NULL
 --;
---czyszczenie NIPów
+--czyszczenie NIPÃ³w
 
 UPDATE NCB_MIG.hm.Stg_PH
 SET nip = REPLACE(dbo.UsuwanieNieliter(nip),' ','')
 
 ;
 
---uzupe³nienie obecnoœci w bazach dzia³¹lnoœci gospodarczej
+--uzupeÅ‚nienie obecnoÅ›ci w bazach dziaÅ‚alnoÅ›ci gospodarczej
 
 UPDATE NCB_MIG.hm.Stg_PH
 SET CEIDG = 1
@@ -341,27 +341,29 @@ WHERE EXISTS(SELECT 1 FROM ref.FIRMY f WHERE f.NIP = REPLACE(NCB_MIG.hm.Stg_PH.n
 --ustalenie typu 1-osoba fizyczna , 2-firma, 3-grupa. Pole ty_konsumenta 1-konsument, 2-quasi-konsument, 3-niekonsument 
 
 --PO CEIDG
---UPDATE NCB_MIG.hm.Stg_PH
---	SET SUGEROWANY_TYP = 2
---	WHERE (typ_konsumenta > 1 OR typ_konsumenta = 0) 
---	AND CEIDG = 1
---	AND SUGEROWANY_TYP IS NULL 
---	AND CzyMIG > 0
+UPDATE NCB_MIG.hm.Stg_PH
+	SET SUGEROWANY_TYP = 2
+	WHERE 1=1 
+	--AND(typ_konsumenta > 1 OR typ_konsumenta = 0) 
+	AND CEIDG = 1
+	AND SUGEROWANY_TYP IS NULL 
+	AND CzyMIG > 0
 
-----PO FUNKCJI dbo.CzyFirma
---UPDATE NCB_MIG.hm.Stg_PH
---	SET SUGEROWANY_TYP = 2
---	WHERE (typ_konsumenta > 1 OR typ_konsumenta = 0) 
---	AND SUGEROWANY_TYP IS NULL 
---	AND CzyMIG > 0	
---	AND dbo.CzyFirma(regon, nazwa, typ_konsumenta) = 2
+--PO FUNKCJI dbo.CzyFirma
+UPDATE NCB_MIG.hm.Stg_PH
+	SET SUGEROWANY_TYP = 2
+	WHERE CzyMIG > 0
+	AND SUGEROWANY_TYP IS NULL 
+	--AND (typ_konsumenta > 1 OR typ_konsumenta = 0)	
+	AND dbo.CzyFirma(regon, nazwa) = 2
 
-----PO Funkcji [dbo].[CzyOsobalubGrupa]
---UPDATE NCB_MIG.hm.Stg_PH
---	SET SUGEROWANY_TYP = [dbo].[CzyOsobalubGrupa](nazwa)
---	WHERE (typ_konsumenta = 1 OR typ_konsumenta = 0) 
---	AND SUGEROWANY_TYP IS NULL 
---	AND CzyMIG > 0	
+--PO Funkcji [dbo].[CzyOsobalubGrupa]
+UPDATE NCB_MIG.hm.Stg_PH
+	SET SUGEROWANY_TYP = [dbo].[CzyOsobalubGrupa](nazwa)
+	WHERE CzyMIG > 0
+	-- AND (typ_konsumenta = 1 OR typ_konsumenta = 0) 
+	AND SUGEROWANY_TYP IS NULL 
+		
 	
 
 
@@ -378,8 +380,8 @@ WHERE EXISTS(SELECT 1 FROM ref.FIRMY f WHERE f.NIP = REPLACE(NCB_MIG.hm.Stg_PH.n
 --UPDATE hm.stg_PH
 --SET ZGODNY_KORESP = 1
 --WHERE 	len(kor_nazwa) > 0	
---		AND TRIM(dbo.UsuwanieNieliter(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(nazwa,'SP. KOMANDYTOWA', 'SP. K.'),'SPÓ£KA KOMANDYTOWA', 'SP. K.'),'PRZEDSIÊBIORSTWO HANDLOWO US£UGOWE','P.H.U'),'SPÓ£KA AKCYJNA','S.A.'),'SPÓ£KA Z O.O.','SP. Z O.O.'),'SPÓ£KA Z OGRANICZON¥ ODPOWIEDZIALNOŒCI¥','SP. Z O.O.'))) 
---			= TRIM(dbo.UsuwanieNieliter(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(kor_nazwa,'SP. KOMANDYTOWA', 'SP. K.'),'SPÓ£KA KOMANDYTOWA', 'SP. K.'),'PRZEDSIÊBIORSTWO HANDLOWO US£UGOWE','P.H.U'),'SPÓ£KA AKCYJNA','S.A.'),'SPÓ£KA Z O.O.','SP. Z O.O.'),'SPÓ£KA Z OGRANICZON¥ ODPOWIEDZIALNOŒCI¥','SP. Z O.O.'))) 
+--		AND TRIM(dbo.UsuwanieNieliter(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(nazwa,'SP. KOMANDYTOWA', 'SP. K.'),'SPÓ£KA KOMANDYTOWA', 'SP. K.'),'PRZEDSIï¿½BIORSTWO HANDLOWO USï¿½UGOWE','P.H.U'),'SPÓ£KA AKCYJNA','S.A.'),'SPÓ£KA Z O.O.','SP. Z O.O.'),'SPÓ£KA Z OGRANICZONï¿½ ODPOWIEDZIALNOï¿½CIï¿½','SP. Z O.O.'))) 
+--			= TRIM(dbo.UsuwanieNieliter(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(kor_nazwa,'SP. KOMANDYTOWA', 'SP. K.'),'SPÓ£KA KOMANDYTOWA', 'SP. K.'),'PRZEDSIï¿½BIORSTWO HANDLOWO USï¿½UGOWE','P.H.U'),'SPÓ£KA AKCYJNA','S.A.'),'SPÓ£KA Z O.O.','SP. Z O.O.'),'SPÓ£KA Z OGRANICZONï¿½ ODPOWIEDZIALNOï¿½CIï¿½','SP. Z O.O.'))) 
 --		AND kodpocztowy = kor_kod_poczt
 --		AND miejscowosc = kor_miejsc
 --		AND ulica = kor_ulica

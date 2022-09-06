@@ -20,4 +20,5 @@ INSERT INTO ref.KodyBledow (KodBledu, Nazwa)
 	(9, N'Brak identyfikatora'),
 	(10, N'Brak kodu w Miejscowoœci'),
 	(11, N'Niepasuj¹ca para kod pocztowy - GUS'),
-	(12, N'Nieistniej¹cy kod GUS')
+	(12, N'Nieistniej¹cy kod GUS'),
+	(13, N'Ró¿nica')

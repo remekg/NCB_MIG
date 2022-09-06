@@ -18,7 +18,7 @@ Opis : Tworzenie i wype³nianie kolumn teryt
 UPDATE NCB_MIG.en.Stg_PPE
 	SET  MIEJSCOWOSC_CLR = dbo.UsuwanieNieliter(REPLACE(REPLACE(miejscowosc, N' KOL.',N' KOLONIA'), N' M£P', N' MA£OPOLSKI'))
 UPDATE NCB_MIG.en.Stg_PPE
-	SET ULICE_CLR = TRIM(REPLACE([dbo].[UsuwanieNieliter](REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ulica, N'ALEJA', 'AL '), N'ALEJE' , N'AL '), 'PLAC', 'PL '), '-GO ',' '),' GO ',' '), N'ŒWIÊTEGO', N'ŒW '), N'ŒWIÊTEJ', N'ŒW '), N'KSIÊDZA', N'KS '), N'BOHATERÓW', N'BOH '), N'GENERA£A', N'GEN '), N'PU£KOWNIKA', N'PU£ '),N'OSIEDLE', N'OS ')),'UL', ''))
+	SET ULICE_CLR = TRIM(REPLACE([dbo].[UsuwanieNieliter](REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ulica, N'ALEJA', 'AL '), N'ALEJE' , N'AL '), 'PLAC', 'PL '), '-GO ',' '),' GO ',' '), N'ŒWIÊTEGO', N'ŒW '), N'ŒWIÊTEJ', N'ŒW '), N'KSIÊDZA', N'KS '), N'BOHATERÓW', N'BOH '), N'GENERA£A', N'GEN '), N'PU£KOWNIKA', N'P£K '),N'OSIEDLE', N'OS ')),'UL ', ''))
 
 ;
 --Krok 1 wyszukanie pojedynczych kombinacji PNA i nazwa miejscowoœci

@@ -26,18 +26,21 @@ Opis : Tworzenie i wype³nianie kolumn teryt
 
 UPDATE NCB_MIG.hm.Stg_PH
 	SET  MIEJSCOWOSC_CLR = dbo.UsuwanieNieliter(REPLACE(REPLACE(miejscowosc, N' KOL.',N' KOLONIA'), N' M£P', N' MA£OPOLSKI'))
---UPDATE NCB_MIG.hm.Stg_PH
---	SET	KOR_MIEJSCOWOSC_CLR = dbo.UsuwanieNieliter(REPLACE(REPLACE(kor_miejsc, N' KOL.',N' KOLONIA'), N' M£P', N' MA£OPOLSKI'))
---	WHERE LEN(kor_miejsc) > 0
 UPDATE NCB_MIG.hm.Stg_PH
-	SET ULICE_CLR = TRIM(REPLACE([dbo].[UsuwanieNieliter](REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ulica, N'ALEJA', 'AL '), N'ALEJE' , N'AL '), 'PLAC', 'PL '), '-GO ',' '),' GO ',' '), N'ŒWIÊTEGO', N'ŒW '), N'ŒWIÊTEJ', N'ŒW '), N'KSIÊDZA', N'KS '), N'BOHATERÓW', N'BOH '), N'GENERA£A', N'GEN '), N'PU£KOWNIKA', N'PU£ '),N'OSIEDLE', N'OS ')),'UL', ''))
---UPDATE NCB_MIG.hm.Stg_PH
---	SET KOR_ULICE_CLR = TRIM(REPLACE([dbo].[UsuwanieNieliter](REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(kor_ulica, N'ALEJA', 'AL '), N'ALEJE' , N'AL '), 'PLAC', 'PL '), '-GO ',' '),' GO ',' '), N'ŒWIÊTEGO', N'ŒW '), N'ŒWIÊTEJ', N'ŒW '), N'KSIÊDZA', N'KS '), N'BOHATERÓW', N'BOH '), N'GENERA£A', N'GEN '), N'PU£KOWNIKA', N'PU£ '),N'OSIEDLE', N'OS ')),'UL', ''))
---	WHERE LEN(kor_ulica) >0
+	SET	KOR_MIEJSCOWOSC_CLR = dbo.UsuwanieNieliter(REPLACE(REPLACE(kor_miejsc, N' KOL.',N' KOLONIA'), N' M£P', N' MA£OPOLSKI'))
+	WHERE LEN(kor_miejsc) > 0
+UPDATE NCB_MIG.hm.Stg_PH
+	SET ULICE_CLR = TRIM(REPLACE([dbo].[UsuwanieNieliter](REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ulica, N'ALEJA', 'AL '), N'ALEJE' , N'AL '), 'PLAC', 'PL '), '-GO ',' '),' GO ',' '), N'ŒWIÊTEGO', N'ŒW '), N'ŒWIÊTEJ', N'ŒW '), N'KSIÊDZA', N'KS '), N'BOHATERÓW', N'BOH '), N'GENERA£A', N'GEN '), N'PU£KOWNIKA', N'P£K '),N'OSIEDLE', N'OS ')),'UL ', ''))
+UPDATE NCB_MIG.hm.Stg_PH
+	SET KOR_ULICE_CLR = TRIM(REPLACE([dbo].[UsuwanieNieliter](REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(kor_ulica, N'ALEJA', 'AL '), N'ALEJE' , N'AL '), 'PLAC', 'PL '), '-GO ',' '),' GO ',' '), N'ŒWIÊTEGO', N'ŒW '), N'ŒWIÊTEJ', N'ŒW '), N'KSIÊDZA', N'KS '), N'BOHATERÓW', N'BOH '), N'GENERA£A', N'GEN '), N'PU£KOWNIKA', N'P£K '),N'OSIEDLE', N'OS ')),'UL ', ''))
+	WHERE LEN(kor_ulica) >0
 
 UPDATE NCB_MIG.hm.Stg_PH
 	SET kodpocztowy = CONCAT(LEFT(kodpocztowy,2),'-',RIGHT(kodpocztowy,3))
 	WHERE kodpocztowy LIKE '[0-9][0-9][0-9][0-9][0-9]'
+UPDATE NCB_MIG.hm.Stg_PH
+	SET [kor_kod_poczt] = CONCAT(LEFT([kor_kod_poczt] ,2),'-',RIGHT([kor_kod_poczt] ,3))
+	WHERE [kor_kod_poczt] LIKE '[0-9][0-9][0-9][0-9][0-9]'
 
 ;
 --Krok 1 wyszukanie pojedynczych kombinacji PNA i nazwa miejscowoœci

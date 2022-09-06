@@ -382,3 +382,22 @@ SELECT
 	N'EN_PPE_POROWNANIE_GUS_PNA'
 FROM [rs].[EN_PPE_POROWNANIE_GUS_PNA]
 GROUP BY N_Systemu, Oddzial, PGE, KodBledu,Rejon
+
+
+--porównanie adr EN vs HM
+  INSERT INTO dbo.BledyProgres ([DataCzasAnalizy], [System], [Spolka], [Oddzial], [Rejon], [Obiekt], [Pole], [Opis], [Ilosc], 
+								[KodBledow], [NazwaRaportu])
+SELECT
+	SYSDATETIME(), 
+	N_Systemu, 
+	PGE, 
+	Oddzial, 
+	Rejon, 
+	N'Punkt Poboru', 
+	NULL, 
+	NULL AS Opis, 
+	COUNT(*)  , 
+	13, 
+	N'EN_PPE_ADR_ROZNICE_HM'
+FROM rs.EN_PPE_ADR_ROZNICE_HM
+GROUP BY N_Systemu, Oddzial, PGE,Rejon

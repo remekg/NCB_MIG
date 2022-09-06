@@ -1,0 +1,70 @@
+﻿select KLUCZ_PPE 
+FROM en.Stg_PPE
+WHERE CzyMIG > 0 and CzyPPE = 1
+group by KLUCZ_PPE
+having count(*)>1
+
+SELECT *
+FROM en.Stg_PPE
+WHERE KLUCZ_PPE IN (
+'10_480548105006452147',
+'10_480548206000030861',
+'10_480548207000076916',
+'10_480548207000077017',
+'10_480548207000126123',
+'10_480548207000126224',
+'10_480548211000082787',
+'10_480548255000002005',
+'10_480548255000002106',
+'11_PLZKED000001235435')
+order by ppe
+
+select RANK() OVER (PARTITION BY ppe ORDER BY skasowany asc, ISNULL(dend,'99991231') DESC),* from en.Stg_PPE
+WHERE KLUCZ_PPE IN (
+'10_480548207000126123',
+'10_480548207000126224',
+'11_PLZKED000000261492',
+'11_PLZKED000000266647',
+'11_PLZKED000001235435'
+)
+order by ppe
+
+WITH A AS(
+SELECT RANK() OVER (PARTITION BY ppe ORDER BY skasowany asc, ISNULL(dend,'99991231') DESC) AS CzyPPE_TMP,
+KLUCZ_PPE AS KLUCZ_PPE_TMP,
+jr AS JR_TMP
+FROM en.Stg_PPE
+WHERE KLUCZ_PPE IN ('10_480548105006452147'))
+
+UPDATE en.Stg_PPE
+SET en.Stg_PPE.CzyPPE = czyPPE_TMP
+FROM A WHERe KLUCZ_PPE = KLUCZ_PPE_TMP AND jr = JR_TMP
+
+
+
+/** Uzupe�nienie LIDERA PPE dla sumator�w (fikcyjne umowy w HM) npr = 0 **/
+
+--WITH A AS
+--(SELECT
+--CASE WHEN MIN(nrpr) OVER (PARTITION BY 
+--		CONCAT('998',�rej,�RIGHT('00000'�+�cast(strona�as�varchar(20)),�5)), SystemzrodlowyID, JR  ORDER BY nrpr)=0
+--		THEN (SELECT TOP(1) CONCAT(SystemZrodlowyID, '_' , ppe) FROM en.Stg_PPE ppe2 
+--			WHERE ppe2.SystemZrodlowyId = en.Stg_PPE.SystemZrodlowyId
+--			AND en.Stg_PPE.Rejon = ppe2.Rejon
+--			AND en.Stg_PPE.jr = ppe2.jr
+--			AND en.Stg_PPE.strona = ppe2.strona
+--		ORDER BY nrpr)
+--		ELSE CONCAT(SystemZrodlowyID, '_' , ppe) END AS LIDER_TMP,
+--		KLUCZ_PPE AS KLUCZ_PPE_TMP
+--FROM en.Stg_PPE
+--WHERE CzyMIG >0
+--	AND CzyPPE = 1
+--)
+
+--INSERT INTO en.Stg_PPE (Czyppe)
+--SELECT RANK() OVER (PARTITION BY ppe ORDER BY skasowany asc, ISNULL(dend,'99991231') DESC)
+--FROM en.Stg_PPE
+
+--SET LIDER = LIDER_TMP
+--FROM A
+--WHERE KLUCZ_PPE = KLUCZ_PPE_TMP

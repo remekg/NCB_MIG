@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\TEMP"
   ],
-  "SelectedNode": "\\01_Przeplyw_ze_Stage.sql",
+  "SelectedNode": "\\TEMP\\ObslugaKoresp.sql",
   "PreviewInSolutionExplorer": false
 }
