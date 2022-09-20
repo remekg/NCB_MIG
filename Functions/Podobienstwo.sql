@@ -30,10 +30,13 @@ BEGIN
 
     -- Wyznaczamy krotszy ciag 
     DECLARE @max int = @l1
-    if @l2 > @l1
+    
+    if @l2 < @l1
         BEGIN
         SET @max = @l2
         END
+    if @max = 0
+        SET @max = 1
 
     --Wyznaczamy wyrazy podobne
     DECLARE @pod int = (SELECT COUNT(*) FROM (

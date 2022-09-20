@@ -198,30 +198,32 @@ and
 				and nr_kontrah not in (select nrw_kontrahenta from crs.dbo.[mapaKontrahentHM]) 
 			THEN 10 /* PG 2016-02-01 Obsluga wyjatku dla kontrahentow SzId =1 rejon = 12, ktorych nie ma w Energosie */
             WHEN r.SystemZrodlowyId = 4 
-				and b.rejon_nr = 11 
+				and b.rejon_nr = '11' 
 			THEN 11
             ELSE r.SystemZrodlowyId 
        END AS tinyint) = kl.SystemZrodlowyId
-WHERE 1=1
 
-    AND ((r.kwota >= 0 AND r.strona = 'W') OR (r.kwota < 0 AND r.strona = 'M'))
-    /* pomija kary umowne do których została wystawiona korekta */
-    AND CAST(r.nr_pozycji AS varchar(12)) + CAST(r.nr_kontrah AS varchar(12)) NOT IN 
-                    (SELECT distinct
-                    CAST(r3.nr_pozycji AS varchar(12)) + CAST(r3.nr_kontrah AS varchar(12)) AS poz_kontrah
-            FROM stage.dbo.HM_Rozrachunki r3
-                INNER HASH JOIN stage.dbo.HM_Rozrachunki r2 ON r2.SystemZrodlowyId = r3.SystemZrodlowyId
-                                                    AND r2.nr_kontrah = r3.nr_kontrah
-                                                    AND (r2.kwota = r3.kwota*(-1))
-                LEFT HASH JOIN stage.dbo.HM_Biuro b ON r3.bok = b.biuro AND r3.SystemZrodlowyId = b.SystemZrodlowyId
-            WHERE
-                r3.kwota != 0  
-                AND r2.kwota != 0
-                AND ((r3.SystemZrodlowyId = 1 AND CHARINDEX('-50-',r3.konto)>0)
-                    OR (r3.SystemZrodlowyId = 4 AND LTRIM(RTRIM(r3.konto))=REPLACE('202-rejon-45-2-0','rejon',b.rejon_nr))
-                    OR (r3.SystemZrodlowyId = 4 AND LTRIM(RTRIM(r3.konto))=REPLACE('202-rejon-45-1-0','rejon',b.rejon_nr))
-                    )
-            )
+/*Ustalenie z 07.09.2022, bierzemy pod uwagę WSZYSTKIE rozrachunki bezwarunkowo*/
+
+--WHERE 1=1
+--    AND ((r.kwota >= 0 AND r.strona = 'W') OR (r.kwota < 0 AND r.strona = 'M'))
+--    /* pomija kary umowne do których została wystawiona korekta */
+--    AND CAST(r.nr_pozycji AS varchar(12)) + CAST(r.nr_kontrah AS varchar(12)) NOT IN 
+--                    (SELECT distinct
+--                    CAST(r3.nr_pozycji AS varchar(12)) + CAST(r3.nr_kontrah AS varchar(12)) AS poz_kontrah
+--            FROM stage.dbo.HM_Rozrachunki r3
+--                INNER HASH JOIN stage.dbo.HM_Rozrachunki r2 ON r2.SystemZrodlowyId = r3.SystemZrodlowyId
+--                                                    AND r2.nr_kontrah = r3.nr_kontrah
+--                                                    AND (r2.kwota = r3.kwota*(-1))
+--                LEFT HASH JOIN stage.dbo.HM_Biuro b ON r3.bok = b.biuro AND r3.SystemZrodlowyId = b.SystemZrodlowyId
+--            WHERE
+--                r3.kwota != 0  
+--                AND r2.kwota != 0
+--                AND ((r3.SystemZrodlowyId = 1 AND CHARINDEX('-50-',r3.konto)>0)
+--                    OR (r3.SystemZrodlowyId = 4 AND LTRIM(RTRIM(r3.konto))=REPLACE('202-rejon-45-2-0','rejon',b.rejon_nr))
+--                    OR (r3.SystemZrodlowyId = 4 AND LTRIM(RTRIM(r3.konto))=REPLACE('202-rejon-45-1-0','rejon',b.rejon_nr))
+--                    )
+--            )
 )
 
 UPDATE NCB_MIG.en.Stg_PH

@@ -106,7 +106,6 @@ DROP TABLE IF EXISTS ##O_Zle_Duble;
 
 
 
-
 --Zrodlo en_on.PH_Grupa
 
 TRUNCATE TABLE en_ob.PH_Koresp

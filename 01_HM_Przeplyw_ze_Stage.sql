@@ -18,33 +18,227 @@ Opis : przeladowanie tabel ze stage i wype�nianie dodatkowych kolumn (np CzyMI
 
 
 ;
+TRUNCATE TABLE NCB_MIG.hm.Stg_PPE;
+
+INSERT INTO NCB_MIG.hm.Stg_PPE ([ppeid], [nrw_umowy], [ulica_up], [ulica_ppe], [miejscowosc_up], [miejscowosc_ppe], [gus_up], [gus_ppe], [rej_up], [rej_ppe], [ppe], [nazwa_up], [opis_ppe], [kod_pocztowy_up], [kod_pocztowy_ppe], [dom_up], [dom_ppe], [mieszk_up], [mieszk_ppe], [nr_dzialki_up], [nr_dzialki_ppe], [aktualny], [id_dostawcy], [rodzaj_umowy], [SystemZrodlowyId], [blokada], [data_blokady], [data_ost], [data_nast], [data_ost_eksp], [nr_ksiazki], [marszruta], [obwod], [zlacze], [posterunek], [lokalizacja], [przezn_lok], [typ_odbioru], [eksp_symbol], [flaga_1], [flaga_2], [flaga_3], [flaga_4], [autor], [rodzaj_up], [typ], [nrw_schematu], [nr_obcy], [klasa_up], [nrw_fpp], [zastosowanie], [stacja], nr_ukladu_pom , [Klucz_UP], [Klucz_UM], [DataImportu], CzyMIG, [PGE], [N_Systemu], [Oddzial], [Rejon])
+SELECT 
+	 [ppeid] = ppe.[nrw_ppe],
+	 up.nrw_umowy,
+	 [ulica_up] = dbo.Czyszczenie( aup.ulica),
+	 [ulica_ppe] = dbo.Czyszczenie( a.ulica),
+	 [miejscowosc_up] = dbo.Czyszczenie( mup.nazwa),
+	 [miejscowosc_ppe] = dbo.Czyszczenie( m.nazwa),
+	 [gus_up] = dbo.Czyszczenie( aup.kod_gus),
+	 [gus_ppe] = dbo.Czyszczenie( a.kod_gus),
+	 [rej_up] = up.rejon,
+	 [rej_ppe] = ppe.nr_rejonu,
+	 [ppe] = dbo.Czyszczenie( ppe.nr_ppe),
+	 [nazwa_up] = dbo.Czyszczenie(up.nazwa),
+	 [opis_ppe] = dbo.Czyszczenie(ppe.opis),
+	 [kod_pocztowy_up] = dbo.Czyszczenie(aup.kod_pocztowy),
+	 [kod_pocztowy_ppe] = dbo.Czyszczenie(a.kod_pocztowy),
+	 [dom_up] = dbo.Czyszczenie(up.nr_domu),
+	 [dom_ppe] = dbo.Czyszczenie(ppe.nr_domu),
+	 [mieszk_up] = dbo.Czyszczenie(up.nr_lokalu),
+	 [mieszk_ppe] = dbo.Czyszczenie(ppe.nr_lokalu),
+	 [nr_dzialki_up] = up.nr_dzialki,
+	 [nr_dzialki_ppe] = ppe.nr_dzialki,
+	 ppe.aktualny,
+	 ppe.id_dostawcy,
+	 ppe.rodzaj_umowy,
+	 ppe.SystemZrodlowyId,
+	 up.blokada,
+	 up.data_blokady,
+	 up.data_ost,
+	 up.data_nast,
+	 up.data_ost_eksp,
+	 up.nr_ksiazki,
+	 up.marszruta,
+	 up.obwod,
+	 up.zlacze,
+	 up.[posterunek],
+     up.[lokalizacja],
+     up.[przezn_lok],
+     up.[typ_odbioru],
+     up.[eksp_symbol],
+     up.[flaga_1],
+     up.[flaga_2],
+     up.[flaga_3],
+     up.[flaga_4],
+     up.[autor],
+	 up.[rodzaj_up],
+     up.[typ],
+     up.[nrw_schematu],
+     up.[nr_obcy],
+     up.[klasa_up],
+     up.[nrw_fpp],
+     up.[zastosowanie],
+	 up.stacja,
+	 up.nr_ukl_pom,
+	 Klucz_UP = CONCAT(up.SystemZrodlowyId,'_',up.nr_ukl_pom),
+	 Klucz_UM = CONCAT(up.SystemZrodlowyId,'_',up.nr_ukl_pom,'_',up.nrw_umowy),
+	 [DataImportu] =  ppe.DataImportu,
+	 CzyMIG=0,
+	 PGE = NULL,
+	 REPLACE(sz.NazwaSystemu,' II','') AS N_Systemu,
+	 sz.Oddzial,
+	 re.expression AS Rejon
+FROM stage.[dbo].[HM_EwidencjaPPE] ppe
+LEFT JOIN Meta.dbo.SystemyZrodlowe sz
+ON ppe.SystemZrodlowyId = sz.Id
+LEFT JOIN [Stage].dbo.[HM_Rejony] re
+ON re.SystemZrodlowyId = ppe.SystemZrodlowyId 
+	AND re.rejon_nr = ppe.nr_rejonu
+LEFT JOIN Stage.[dbo].[HM_UkladPomiarowy] up
+ON up.nrw_ppe = ppe.nrw_ppe
+AND up.SystemZrodlowyId = ppe.SystemZrodlowyId
+left join stage.dbo.HM_Adres a 
+on a.nrw_adresu=ppe.nr_adresu 
+and a.SystemZrodlowyId=ppe.SystemZrodlowyId
+left join stage.dbo.HM_Miejscowosc m 
+on m.nrw_miejscowosci =a.nrw_miejscowosci 
+and a.SystemZrodlowyId =m.SystemZrodlowyId
+left join stage.dbo.HM_Adres aup 
+on aup.nrw_adresu=up.nr_adresu 
+and aup.SystemZrodlowyId=up.SystemZrodlowyId
+left join stage.dbo.HM_Miejscowosc mup 
+on mup.nrw_miejscowosci =aup.nrw_miejscowosci 
+and aup.SystemZrodlowyId =mup.SystemZrodlowyId
+
+/*uzupełnianie kolumny max_data_bod*/
+WITH A AS(
+SELECT	f.data_bod, p.Klucz_UP
+					FROM [NCB_MIG].hm.Stg_PPE p
+					left join (select max(f.data_bod) data_bod, 
+								nr_ukladu_pom, 
+								f.SystemZrodlowyId 
+						from Stage.[dbo].[HM_jp_fakturyz] f 
+						group by nr_ukladu_pom, 
+						f.SystemZrodlowyId) f
+						on p.Klucz_UP = concat(f.SystemZrodlowyId,'_', f.nr_ukladu_pom)
+					  where p.CzyMIG>0
+)
+
+UPDATE NCB_MIG.hm.Stg_PPE
+SET max_data_bod = data_bod FROM A
+WHERE A.Klucz_UP = hm.Stg_PPE.Klucz_UP
+
+/*wypełnianie tabeli umów*/
+
+TRUNCATE TABLE NCB_MIG.[hm].[Stg_Umowy]
+
+INSERT INTO NCB_MIG.hm.Stg_Umowy([nrw_umowy], [nr_up], [platnik], [przezn_lok], [r_umowy], [id_dostawcy], [id_sprzedawcy], [data_p_ob], [data_k_ob], [taryfa], [rejon], [status_zadania], [SystemZrodlowyId], [obrot_dystrybucja], [nr_umowy], [odbiorca], [data_zaw], [nr_war_tech], [status], [symbol_konta], [zatwierdzona], [data_odcz_fin], [rodz_aneksu], [data_aneksu], [blokada], [data_wersji], [DataImportu], [nr_zest_alg], [id_sprz_rez], [r_sprz_rez], wspolna_faktura, [Klucz_UP], [Klucz_UM], [Klucz_PH], [Klucz_ODB], [N_Systemu], [Oddzial], [CzyMIG], [CzyAktywna])
+SELECT	[nrw_umowy], 
+		[nr_up], 
+		[platnik], 
+		[przezn_lok], 
+		[r_umowy], 
+		[id_dostawcy], 
+		[id_sprzedawcy], 
+		[data_p_ob], 
+		[data_k_ob] = REPLACE([data_k_ob],'00000000','99991231'), 
+		[taryfa], 
+		[rejon], 
+		[status_zadania], 
+		[SystemZrodlowyId], 
+		[obrot_dystrybucja], 
+		[nr_umowy], 
+		[odbiorca], 
+		[data_zaw], 
+		[nr_war_tech], 
+		[status], 
+		[symbol_konta], 
+		[zatwierdzona], 
+		[data_odcz_fin], 
+		[rodz_aneksu], 
+		[data_aneksu], 
+		[blokada], 
+		[data_wersji], 
+		[DataImportu], 
+		[nr_zest_alg], 
+		[id_sprz_rez], 
+		[r_sprz_rez],
+		wspolna_faktura,
+		Klucz_UP = CONCAT(um.SystemZrodlowyId,'_',um.nr_up),
+		Klucz_UM = CONCAT(um.SystemZrodlowyId,'_',um.nr_up,'_',um.nrw_umowy),
+		Klucz_PH = CONCAT_WS('_', um.SystemZrodlowyId, um.platnik),
+		Klucz_ODB = CONCAT_WS('_', um.SystemZrodlowyId, um.odbiorca),
+		REPLACE(sz.NazwaSystemu,' II','') AS N_Systemu,
+		sz.Oddzial,
+		CzyMIG = 0,
+		CzyAktywna = 0
+FROM Stage.dbo.HM_NaglowekUmowy um
+LEFT JOIN Meta.dbo.SystemyZrodlowe sz
+ON um.SystemZrodlowyId = sz.Id
+--WHERE	((um.SystemZrodlowyId = 4
+--		AND um.rejon NOT LIKE '6%') OR um.SystemZrodlowyId = 1)
+--		AND status_zadania NOT IN ('8A','8X','8Z')
+
+/*ustalenie CzyAktywna w Umowach*/
+
+UPDATE NCB_MIG.hm.Stg_Umowy
+	SET CzyAktywna = 1,
+		CzyMIG = 1
+WHERE	[data_k_ob] > convert(VARCHAR(8),  DataImportu, 112)
+		AND [data_p_ob] <= convert(VARCHAR(8),  DataImportu, 112)
+		AND ((SystemZrodlowyId = 4
+		AND rejon NOT LIKE '6%') OR SystemZrodlowyId = 1)
+		AND status_zadania NOT IN ('1S','1A','8A','8X','8Z') -- w przygotowaniu
+
+/*ustalenie CzyMIG w Umowach*/
+
+UPDATE NCB_MIG.hm.Stg_Umowy
+	SET CzyMIG = 4
+WHERE status_zadania IN ('1S','1A')
+		AND ((SystemZrodlowyId = 4
+		AND rejon NOT LIKE '6%') OR SystemZrodlowyId = 1)
+
+UPDATE NCB_MIG.hm.Stg_Umowy
+	SET CzyMIG = 2
+WHERE [data_k_ob] > convert(VARCHAR(8),  DATEADD(MONTH, -18, DataImportu), 112)
+		AND CzyMIG = 0
+		AND ((SystemZrodlowyId = 4
+		AND rejon NOT LIKE '6%') OR SystemZrodlowyId = 1)
+		AND status_zadania NOT IN ('8A','8X','8Z')
+
+/*Ustalenie Czymig w PPE*/
+
+UPDATE NCB_MIG.hm.Stg_PPE
+SET CzyMIG = 1
+WHERE EXISTS (SELECT 1 FROM NCB_MIG.hm.Stg_Umowy um 
+				WHERE	NCB_MIG.hm.Stg_PPE.Klucz_UM = um.Klucz_UM 
+						AND um.CzyMIG > 0) 
+	  OR (blokada <> 'L' 
+			AND EXISTS (SELECT 1 FROM NCB_MIG.hm.Stg_Umowy um
+				WHERE	NCB_MIG.hm.Stg_PPE.Klucz_UM = um.Klucz_UM
+						AND ((SystemZrodlowyId = 4
+							AND rejon NOT LIKE '6%') OR SystemZrodlowyId = 1)))
+
+/*uzupełnianie CzyMIG w Umowach*/
+
+UPDATE NCB_MIG.hm.Stg_Umowy
+	SET CzyMIG = 2
+	WHERE EXISTS (SELECT 1 FROM NCB_MIG.hm.Stg_PPE ppe 
+					WHERE	ppe.Klucz_UM = NCB_MIG.hm.Stg_Umowy.Klucz_UM
+							AND ppe.CzyMIG > 0)
+			AND NCB_MIG.hm.Stg_Umowy.CzyMIG = 0
+
+/*wypełnianie PH*/
+
 TRUNCATE TABLE NCB_MIG.hm.Stg_PH
---TRUNCATE TABLE NCB_MIG.hm.Stg_PPE
 
 SELECT
 *
 INTO ##tmp1
-FROM(SELECT CONCAT_WS('_', um.SystemZrodlowyId, um.platnik) AS platnik
-								FROM Stage.dbo.HM_UkladPomiarowy AS up		
-							INNER JOIN Stage.dbo.HM_NaglowekUmowy AS um ON um.nr_up = up.nr_ukl_pom		
-							AND um.nrw_umowy = up.nrw_umowy	
-							AND up.SystemZrodlowyId = um.SystemZrodlowyId	
-							AND (	
-								um.[data_k_ob] = '00000000'
-								OR um.[data_k_ob] > convert(VARCHAR(8), DATEADD(MONTH, -18, GETDATE()), 112)
-								)
-							AND um.[data_p_ob] <> '00000000'
+FROM(SELECT platnik, SystemZrodlowyId
+								FROM NCB_MIG.hm.Stg_Umowy AS up
+								WHERE CzyMIG > 0
 							UNION
-							SELECT CONCAT_WS('_', um.SystemZrodlowyId, um.odbiorca) AS platnik
-								FROM Stage.dbo.HM_UkladPomiarowy AS up		
-							INNER JOIN Stage.dbo.HM_NaglowekUmowy AS um ON um.nr_up = up.nr_ukl_pom		
-							AND um.nrw_umowy = up.nrw_umowy	
-							AND up.SystemZrodlowyId = um.SystemZrodlowyId	
-							AND (	
-								um.[data_k_ob] = '00000000'
-								OR um.[data_k_ob] > convert(VARCHAR(8), DATEADD(MONTH, -18, GETDATE()), 112)
-								)
-							AND um.[data_p_ob] <> '00000000') A
+							SELECT platnik , SystemZrodlowyId
+								FROM NCB_MIG.hm.Stg_Umowy AS up
+								WHERE CzyMIG > 0) A
+
+CREATE NONCLUSTERED INDEX IX_TMP ON ##tmp1 (platnik, SystemZrodlowyId)
 
 INSERT INTO NCB_MIG.hm.Stg_PH ([nrpl], [nip], [regon], [pesel], [nazwa], [ulica], [kodpocztowy], [miejscowosc], [poczta], [nrdomu], [nrmieszkania], [gus], [nrrejonu], [SystemZrodlowyId], id_grupa_wind, biuro, [kor_dom], [kor_kod_poczt], [kor_miejsc], [kor_mieszk], [kor_poczta], [kor_ulica], [tryb_koresp], [mail], [telefon],[telefon_kom],[fax], odbior, id_sprzedawcy,obrot_dystrybucja,nr_seria_dowodu,branza,saldo, [DataImportu],[kor_nazwa1], [kor_nazwa2], [Klucz_PH], [CzyMIG], [PGE], [N_Systemu], [Oddzial])
 SELECT 
@@ -91,7 +285,7 @@ SELECT
 	 Klucz_PH = CONCAT_WS('_', kl.SystemZrodlowyId, kl.nrw_kontrahenta),
 	 CzyMIG = 0,
 	 PGE = NULL,
-	 sz.NazwaSystemu AS N_Systemu,
+	 REPLACE(sz.NazwaSystemu,' II','') AS N_Systemu,
 	 sz.Oddzial
 FROM [Stage].[dbo].[HM_Klienci] kl
 LEFT JOIN Meta.dbo.SystemyZrodlowe sz
@@ -99,130 +293,38 @@ ON kl.SystemZrodlowyId = sz.Id
 LEFT JOIN Stage.dbo.HM_AdresKoresp ak
 ON ak.nr_kontrahenta = kl.nrw_kontrahenta
 AND ak.SystemZrodlowyId = kl.SystemZrodlowyId
-WHERE EXISTS (SELECT 1 FROM ##tmp1 WHERE CONCAT_WS('_', kl.SystemZrodlowyId, kl.nrw_kontrahenta) = platnik) OR CAST(kl.saldo as decimal) > 0
+WHERE EXISTS (SELECT 1 FROM ##tmp1 
+				WHERE	kl.SystemZrodlowyId = ##tmp1.SystemZrodlowyId
+						AND kl.nrw_kontrahenta = ##tmp1.platnik) 
+	OR EXISTS(SELECT 1  FROM [Stage].[dbo].[HM_Rozrachunki] r
+				WHERE r.SystemZrodlowyId = kl.SystemZrodlowyId 
+						AND r.nr_kontrah = kl.nrw_kontrahenta) 
 
 DROP TABLE IF EXISTS ##tmp1;
 
---INSERT INTO NCB_MIG.hm.Stg_PPE ([ppeid], [przylaczeid], [nrpl], [ulica], [miejscowosc], [gus], [rej], [strona], [ppe], [npp], [mscgus], [pdgrp], [pum04], [otp], [kod_p], [adres_poczty], [dom], [mieszk], [dinit], [dend], [tar], [is_koncesja], [nrpr], [SystemZrodlowyId], [rej_src], [nrpre], [id_dos], [skasowany], [potrzeby], [ID_ODBIORCA_TPA], [mc_roz], [PUM01], [PUM02], [PUM03], [PUM05], [PUM06], [PUM07], [PUM08], [PUM09], [PUM10], [PUM11], [PUM12], [DataImportu], [epr], [nr_um_przes], [data_um_przes], [data_wyg_um_przes], [cennik], [dpocz], [cennik2], [cennikd], [id_spr_rezer], [notes], [dpor], [dkor], [Przylacz_skasowany], [jr], [Klucz_PH], [CzyMIG], [PGE], [N_Systemu], [Oddzial], [Rejon])
---SELECT 
---	 [ppeid] = [ppeid],
---	 [przylaczeid] =  [przylaczeid],
---	 [nrpl] = dbo.Czyszczenie( [nrpl]),
---	 [ulica] = dbo.Czyszczenie( [ulica]),
---	 [miejscowosc] = dbo.Czyszczenie( [miejscowosc]),
---	 [gus] = dbo.Czyszczenie( [gus]),
---	 [rej] = dbo.Czyszczenie( [rej]),
---	 [strona] =  [strona],
---	 [ppe] = dbo.Czyszczenie( [ppe]),
---	 [npp] = dbo.Czyszczenie( [npp]),
---	 [mscgus] = dbo.Czyszczenie( [mscgus]),
---	 [pdgrp] = dbo.Czyszczenie( [pdgrp]),
---	 [pum04] =  [pum04],
---	 [otp] =  [otp],
---	 [kod_p] = dbo.Czyszczenie( [kod_p]),
---	 [adres_poczty] = dbo.Czyszczenie( [adres_poczty]),
---	 [dom] = dbo.Czyszczenie( [dom]),
---	 [mieszk] = dbo.Czyszczenie( [mieszk]),
---	 [dinit] =  [dinit],
---	 [dend] =  [dend],
---	 [tar] = dbo.Czyszczenie( [tar]),
---	 [is_koncesja] =  [is_koncesja],
---	 [nrpr] =  [nrpr],
---	 [SystemZrodlowyId] =  ppe.SystemZrodlowyId,
---	 [rej_src] = dbo.Czyszczenie( [rej_src]),
---	 [nrpre] =  [nrpre],
---	 [id_dos] =  [id_dos],
---	 [skasowany] =  [skasowany],
---	 [potrzeby] =  [potrzeby],
---	 [ID_ODBIORCA_TPA] =  [ID_ODBIORCA_TPA],
---	 [mc_roz] =  [mc_roz],
---	 [PUM01] =  [PUM01],
---	 [PUM02] =  [PUM02],
---	 [PUM03] =  [PUM03],
---	 [PUM05] =  [PUM05],
---	 [PUM06] =  [PUM06],
---	 [PUM07] =  [PUM07],
---	 [PUM08] =  [PUM08],
---	 [PUM09] =  [PUM09],
---	 [PUM10] =  [PUM10],
---	 [PUM11] =  [PUM11],
---	 [PUM12] =  [PUM12],
---	 [DataImportu] =  ppe.DataImportu,
---	 [epr] =  [epr],
---	 [nr_um_przes] = dbo.Czyszczenie( [nr_um_przes]),
---	 [data_um_przes] =  [data_um_przes],
---	 [data_wyg_um_przes] =  [data_wyg_um_przes],
---	 [cennik] =  [cennik],
---	 [dpocz] =  [dpocz],
---	 [cennik2] =  [cennik2],
---	 [cennikd] =  [cennikd],
---	 [id_spr_rezer] =  [id_spr_rezer],
---	 [notes] = dbo.Czyszczenie( [notes]),
---	 [dpor] =  [dpor],
---	 [dkor] =  [dkor],
---	 [Przylacz_skasowany] =  [Przylacz_skasowany],
---	 jr =  ppe.jr,
---	 Klucz_PH = CONCAT(ppe.SystemZrodlowyId,'_', ppe.jr, '_90', nrpl),
---	 CzyMIG = 0,
---	 PGE = NULL,
---	 sz.NazwaSystemu AS N_Systemu,
---	 sz.Oddzial,
---	 re.nazwa AS Rejon
---FROM Stage.dbo.EN_PPE ppe
---LEFT JOIN Meta.dbo.SystemyZrodlowe sz
---ON ppe.SystemZrodlowyId = sz.Id
---LEFT JOIN Stage.dbo.EN_Rejony re
---ON re.SystemZrodlowyId = ppe.SystemZrodlowyId 
---	AND re.nr_rej = ppe.rej
---	AND re.jr = ppe.jr
---WHERE ppe.SystemZrodlowyId > 9
-
---ALTER TABLE NCB_MIG.hm.Stg_PPE
---ADD CzyMIG smallint,
---	PGE nvarchar(2)
-
---ALTER TABLE NCB_MIG.hm.Stg_PH
---ADD CzyMIG smallint,
---	PGE nvarchar(2)
-
---UPDATE NCB_MIG.hm.Stg_PPE
---SET PGE = NULL
+--JOIN Stage.dbo.HM_NaglowekUmowy um
+--ON um.nrw_umowy = up.nrw_umowy
+--AND um.SystemZrodlowyId = up.SystemZrodlowyId
+--AND um.nr_up = up.nr_ukl_pom
+--WHERE (	
+--								um.[data_k_ob] = '00000000'
+--								OR um.[data_k_ob] > convert(VARCHAR(8), DATEADD(MONTH, -18, GETDATE()), 112)
+--								)
+--							AND um.[data_p_ob] <> '00000000'
 
 UPDATE NCB_MIG.hm.Stg_PH
 SET PGE = NULL
 
---UPDATE NCB_MIG.hm.Stg_PPE
---SET CzyMIG = 
---	CASE 
---			WHEN	skasowany IS NULL 
---					AND przylacz_skasowany IS NULL
---		THEN 1
---			WHEN skasowany IS NOT NULL
---					AND (dend >= DATEADD(MONTH, -18, GETDATE()) 
---						OR dkor >= DATEADD(MONTH, -18, GETDATE())) 
---		THEN 2
---		--3 jak b�dzie algorytm rozlicze�
---	ELSE 0
---	END
-
 SELECT * 
 INTO ##aktywni 
 FROM (
-SELECT CONCAT_WS('_', um.SystemZrodlowyId, um.platnik) AS PH
-FROM Stage.dbo.HM_NaglowekUmowy um
-WHERE 	(	
-								um.[data_k_ob] = '00000000'
-								OR um.[data_k_ob] >= convert(VARCHAR(8), GETDATE(), 112)
-								)
-							AND um.[data_p_ob] <> '00000000'
+SELECT Klucz_PH AS PH
+FROM NCB_MIG.hm.Stg_Umowy um
+WHERE CzyAktywna = 1
 UNION
-SELECT CONCAT_WS('_', um.SystemZrodlowyId, um.odbiorca) AS PH
-FROM Stage.dbo.HM_NaglowekUmowy um
-WHERE 	(	
-								um.[data_k_ob] = '00000000'
-								OR um.[data_k_ob] >= convert(VARCHAR(8), GETDATE(), 112)
-								)
-							AND um.[data_p_ob] <> '00000000') A;
+SELECT Klucz_ODB AS PH
+FROM NCB_MIG.hm.Stg_Umowy um
+WHERE CzyAktywna = 1) A;
 
 UPDATE NCB_MIG.hm.Stg_PH
 SET CzyMIG = 1
@@ -234,21 +336,13 @@ DROP TABLE IF EXISTS ##aktywni
 SELECT * 
 INTO ##aktywni18 
 FROM (
-SELECT CONCAT_WS('_', um.SystemZrodlowyId, um.platnik) AS PH
-FROM Stage.dbo.HM_NaglowekUmowy um
-WHERE 	(	
-								um.[data_k_ob] = '00000000'
-								OR um.[data_k_ob] >= convert(VARCHAR(8), DATEADD(MONTH, -18, GETDATE()), 112)
-								)
-							AND um.[data_p_ob] <> '00000000'
+SELECT Klucz_PH AS PH
+FROM NCB_MIG.hm.Stg_Umowy um
+WHERE CzyMIG > 1
 UNION
-SELECT CONCAT_WS('_', um.SystemZrodlowyId, um.odbiorca) AS PH
-FROM Stage.dbo.HM_NaglowekUmowy um
-WHERE 	(	
-								um.[data_k_ob] = '00000000'
-								OR um.[data_k_ob] >= convert(VARCHAR(8), DATEADD(MONTH, -18, GETDATE()), 112)
-								)
-							AND um.[data_p_ob] <> '00000000') A;
+SELECT Klucz_ODB AS PH
+FROM NCB_MIG.hm.Stg_Umowy um
+WHERE CzyMIG > 1) A;
 
 UPDATE NCB_MIG.hm.Stg_PH
 SET CzyMIG = 2
@@ -259,7 +353,9 @@ DROP TABLE IF EXISTS ##aktywni18;
 
 UPDATE NCB_MIG.hm.Stg_PH
 SET CzyMIG = 3 
-WHERE CAST(saldo as decimal) <> 0
+WHERE EXISTS(SELECT 1  FROM [Stage].[dbo].[HM_Rozrachunki] r
+				WHERE r.SystemZrodlowyId = NCB_MIG.hm.Stg_PH.SystemZrodlowyId 
+						AND r.nr_kontrah = NCB_MIG.hm.Stg_PH.nrpl) 
 AND Czymig = 0
 
 --Wypelnianie kolumny PGE w PPE informacją o przypisanie danych do obszaru (O, D i OD) zalożenia:
@@ -328,7 +424,6 @@ AND Czymig = 0
 
 UPDATE NCB_MIG.hm.Stg_PH
 SET nip = REPLACE(dbo.UsuwanieNieliter(nip),' ','')
-
 ;
 
 --uzupełnienie obecności w bazach działalności gospodarczej
@@ -364,9 +459,6 @@ UPDATE NCB_MIG.hm.Stg_PH
 	-- AND (typ_konsumenta = 1 OR typ_konsumenta = 0) 
 	AND SUGEROWANY_TYP IS NULL 
 		
-	
-
-
 --UPDATE NCB_MIG.hm.Stg_PH
 --SET SUGEROWANY_TYP = 
 --		CASE WHEN (typ_konsumenta > 1 OR typ_konsumenta = 0) AND CEIDG = 1
@@ -376,6 +468,30 @@ UPDATE NCB_MIG.hm.Stg_PH
 --				THEN [dbo].[CzyOsobalubGrupa](nazwa)			
 --			ELSE 4
 --	END
+
+/*korekta kod ow pocztowych w PH*/
+
+UPDATE NCB_MIG.hm.Stg_PH
+	SET kodpocztowy = CONCAT(LEFT(kodpocztowy,2),'-',RIGHT(kodpocztowy,3))
+	WHERE kodpocztowy LIKE '[0-9][0-9][0-9][0-9][0-9]'
+UPDATE NCB_MIG.hm.Stg_PH
+	SET [kor_kod_poczt] = CONCAT(LEFT([kor_kod_poczt] ,2),'-',RIGHT([kor_kod_poczt] ,3))
+	WHERE [kor_kod_poczt] LIKE '[0-9][0-9][0-9][0-9][0-9]'
+
+/*korygowanie kodów pocztowych w PPE*/
+
+UPDATE NCB_MIG.hm.Stg_PPE
+	SET kod_pocztowy_ppe = CONCAT(LEFT(kod_pocztowy_ppe,2),'-',RIGHT(kod_pocztowy_ppe,3))
+	WHERE kod_pocztowy_ppe LIKE '[0-9][0-9][0-9][0-9][0-9]'
+UPDATE NCB_MIG.hm.Stg_PPE
+	SET kod_pocztowy_up = CONCAT(LEFT(kod_pocztowy_up ,2),'-',RIGHT(kod_pocztowy_up ,3))
+	WHERE kod_pocztowy_up LIKE '[0-9][0-9][0-9][0-9][0-9]'
+/*ustalenie PGE z Umów*/
+
+UPDATE NCB_MIG.hm.Stg_PPE
+SET PGE = obrot_dystrybucja 
+FROM hm.Stg_Umowy um 
+WHERE um.Klucz_UM = NCB_MIG.hm.Stg_PPE.Klucz_UM
 
 --UPDATE hm.stg_PH
 --SET ZGODNY_KORESP = 1

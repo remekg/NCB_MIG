@@ -83,7 +83,7 @@ INSERT INTO dbo.TERYT_PNA ([ADRES_MIS_KEY], [TERYT_KOD_TERC], [TERYT_WOJ_NAZWA],
 		,PARZYSTOSC
 FROM A;
 
---Usupe³niæ teryt podstawowy miast  dzielnicami
+--Uzupe³niæ teryt podstawowy miast  dzielnicami
 UPDATE ref.lista_pna
 SET Gmina = 
 	SUBSTRING(MIEJSCOWOŒÆ, CHARINDEX('(', MIEJSCOWOŒÆ) + 1, 
@@ -95,7 +95,24 @@ UPDATE ref.lista_pna
 SET MIEJSCOWOŒÆ = SUBSTRING(MIEJSCOWOŒÆ, CHARINDEX('(', MIEJSCOWOŒÆ) + 1, 
 	CHARINDEX(')', MIEJSCOWOŒÆ) - CHARINDEX('(', MIEJSCOWOŒÆ) - 1)
 WHERE Miejscowoœæ LIKE N'%(%)%'
+--uzupe³nianie tabeli distonct kod pocztowy miejscowoœæ
+DROP TABLE IF EXISTS ref.dist_lista_pna
 
+SELECT	distinct PNA,
+		CASE WHEN POWIAT = N'Warszawa'
+			THEN N'Warszawa'
+			WHEN POWIAT = N'Poznañ'
+			THEN N'Poznañ'
+			WHEN POWIAT = N'Kraków'
+			THEN N'Kraków'
+			WHEN POWIAT = N'£ódŸ'
+			THEN N'£ódŸ'
+			WHEN POWIAT = N'Wroc³aw'
+			THEN N'Wroc³aw'
+			ELSE MIEJSCOWOŒÆ
+		END AS MIEJSCOWOŒÆ
+INTO ref.dist_lista_pna
+FROM ref.lista_pna
 
 DROP TABLE IF EXISTS ref.lista_pna_teryt
 
@@ -563,28 +580,26 @@ SELECT	distinct LEFT(PNA,4) AS PNA,
 
 with a as 
 (
-	SELECT	distinct TERYT_MIEJ_SIMC, TERYT_ULICA_SKLEJONA_1, TERYT_ULICA
-	FROM [NCB_MIG].[dbo].[TERYT_PNA]
-	WHERE  LEN(TERYT_ULICA) = 5
+	SELECT	distinct SYM AS TERYT_MIEJ_SIMC,
+					TRIM(CONCAT(NAZWA_2,' ' ,NAZWA_1)) AS TERYT_ULICA_SKLEJONA_1,
+					SYM_UL TERYT_ULICA
+	FROM CRS.[zrodlo].[TERYT_ULIC]
+	WHERE  LEN(SYM_UL) = 5
+			AND [CzyUsuniety]=0
   ),	
 
   b as(
   select 
 		TERYT_MIEJ_SIMC, 
 		TERYT_ULICA_SKLEJONA_1, 
-		--TERYT_ULICA,
-		--COUNT(*) over (partition by TERYT_MIEJ_SIMC, TERYT_ULICA_SKLEJONA_1) as ile 
 		STRING_AGG(TERYT_ULICA, '; ') AS TERYT_ULICA
   from a
   GROUP BY  TERYT_MIEJ_SIMC, 
 		TERYT_ULICA_SKLEJONA_1
   )
-  --lista miejscowoœci z ulicami, gdzie mo¿liwe ¿e jest wiêcej ni¿ jeden teryt dla ulicy (np. os. i ul.)
   select TERYT_MIEJ_SIMC, TERYT_ULICA_SKLEJONA_1, TERYT_ULICA
   INTO ref.TerytM_NazwaU_TerytU
   from b 
-  --where ile =1 
-
 
 ;
 CREATE INDEX ix_ulice ON ref.TerytM_NazwaU_TerytU (TERYT_MIEJ_SIMC, TERYT_ULICA_SKLEJONA_1)
@@ -595,9 +610,13 @@ INCLUDE (TERYT_ULICA);
 
 with C as 
 (
-	SELECT	distinct TERYT_MIEJ_SIMC, ULICE_CLR, TERYT_ULICA
-	FROM [NCB_MIG].[dbo].[TERYT_PNA]
-	WHERE  LEN(TERYT_ULICA) = 5
+	SELECT	distinct SYM AS TERYT_MIEJ_SIMC, 
+						TRIM(REPLACE([dbo].[UsuwanieNieliter](REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CONCAT(NAZWA_2,' ' ,NAZWA_1), N'ALEJA', 'AL '), N'ALEJE' , N'AL '), 'PLAC', 'PL '), '-GO ',' '),' GO ',' '), N'ŒWIÊTEGO', N'ŒW '), N'ŒWIÊTEJ', N'ŒW '), N'KSIÊDZA', N'KS '), N'BOHATERÓW', N'BOH '), N'GENERA£A', N'GEN '), N'PU£KOWNIKA', N'P£K '),N'OSIEDLE', N'OS ')),'UL ', ''))
+					AS ULICE_CLR, 
+					SYM_UL AS TERYT_ULICA
+	FROM CRS.zrodlo.TERYT_ULIC
+	WHERE  LEN(SYM_UL) = 5
+			AND [CzyUsuniety]=0
   ),	
 
   D as(
@@ -610,7 +629,6 @@ with C as
 		ULICE_CLR
   )
   
-  --lista miejscowoœci z ulicami, gdzie mo¿liwe ¿e jest wiêcej ni¿ jeden teryt dla ulicy (np. os. i ul.)
   select TERYT_MIEJ_SIMC, ULICE_CLR AS ULICE_TMP_CLR, TERYT_ULICA
   INTO ref.TerytM_NazwaUCLR_TerytU
   from D;
@@ -623,9 +641,10 @@ INCLUDE (TERYT_ULICA);
 
 with F as 
 (
-	SELECT	distinct TERYT_MIEJ_SIMC, TERYT_ULICA_NAZWA_1, TERYT_ULICA
-	FROM [NCB_MIG].[dbo].[TERYT_PNA]
-	WHERE  LEN(TERYT_ULICA) = 5
+	SELECT	distinct SYM AS TERYT_MIEJ_SIMC,NAZWA_1 AS TERYT_ULICA_NAZWA_1,SYM_UL AS TERYT_ULICA
+	FROM CRS.zrodlo.TERYT_ULIC
+	WHERE  LEN(SYM_UL) = 5
+			AND [CzyUsuniety]=0
   ),	
   
   G as(
@@ -649,9 +668,13 @@ INCLUDE (TERYT_ULICA);
 
 with I as 
 (
-	SELECT	distinct TERYT_MIEJ_SIMC, ULICA_KROTKA_CLR, TERYT_ULICA
-	FROM [NCB_MIG].[dbo].[TERYT_PNA]
-	WHERE  LEN(TERYT_ULICA) = 5
+	SELECT	distinct SYM AS TERYT_MIEJ_SIMC, 
+						TRIM(REPLACE([dbo].[UsuwanieNieliter](REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(NAZWA_1, N'ALEJA', 'AL '), N'ALEJE' , N'AL '), 'PLAC', 'PL '), '-GO ',' '),' GO ',' '), N'ŒWIÊTEGO', N'ŒW '), N'ŒWIÊTEJ', N'ŒW '), N'KSIÊDZA', N'KS '), N'BOHATERÓW', N'BOH '), N'GENERA£A', N'GEN '), N'PU£KOWNIKA', N'P£K '),N'OSIEDLE', N'OS ')),'UL ', ''))
+					AS ULICA_KROTKA_CLR, 
+					SYM_UL AS TERYT_ULICA
+	FROM CRS.zrodlo.TERYT_ULIC
+	WHERE  LEN(SYM_UL) = 5
+			AND [CzyUsuniety]=0
   ),	
   
   J as(
@@ -675,11 +698,13 @@ INCLUDE (TERYT_ULICA);
 
 with L as 
 (
-	SELECT	distinct TERYT_MIEJ_SIMC, 
-		TRIM(REPLACE([dbo].[UsuwanieNieliter](REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TERYT_ULICA_SKLEJONA_Z_CECHA_1, N'ALEJA', 'AL '), N'ALEJE' , N'AL '), 'PLAC', 'PL '), '-GO ',' '),' GO ',' '), N'ŒWIÊTEGO', N'ŒW '), N'ŒWIÊTEJ', N'ŒW '), N'KSIÊDZA', N'KS '), N'BOHATERÓW', N'BOH '), N'GENERA£A', N'GEN '), N'PU£KOWNIKA', N'P£K '),N'OSIEDLE', N'OS ')),'UL ', ''))
- as NAZWA, TERYT_ULICA
-	FROM [NCB_MIG].[dbo].[TERYT_PNA]
-	WHERE  LEN(TERYT_ULICA) = 5
+	SELECT	distinct SYM AS TERYT_MIEJ_SIMC, 
+		TRIM(REPLACE([dbo].[UsuwanieNieliter](REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CONCAT(CECHA,' ',NAZWA_2,' ' ,NAZWA_1), N'ALEJA', 'AL '), N'ALEJE' , N'AL '), 'PLAC', 'PL '), '-GO ',' '),' GO ',' '), N'ŒWIÊTEGO', N'ŒW '), N'ŒWIÊTEJ', N'ŒW '), N'KSIÊDZA', N'KS '), N'BOHATERÓW', N'BOH '), N'GENERA£A', N'GEN '), N'PU£KOWNIKA', N'P£K '),N'OSIEDLE', N'OS ')),'UL ', ''))
+		as NAZWA, 
+		SYM_UL AS TERYT_ULICA
+	FROM CRS.zrodlo.TERYT_ULIC
+	WHERE  LEN(SYM_UL) = 5
+			AND [CzyUsuniety]=0
   ),	
   
   M as(
@@ -703,11 +728,12 @@ INCLUDE (TERYT_ULICA);
 
 with O as 
 (
-	SELECT	distinct TERYT_MIEJ_SIMC,
-	TRIM(REPLACE([dbo].[UsuwanieNieliter](REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(concat(TERYT_ULICA_CECHA,TERYT_ULICA_NAZWA_1) , N'ALEJA', 'AL '), N'ALEJE' , N'AL '), 'PLAC', 'PL '), '-GO ',' '),' GO ',' '), N'ŒWIÊTEGO', N'ŒW '), N'ŒWIÊTEJ', N'ŒW '), N'KSIÊDZA', N'KS '), N'BOHATERÓW', N'BOH '), N'GENERA£A', N'GEN '), N'PU£KOWNIKA', N'P£K '),N'OSIEDLE', N'OS ')),'UL ', ''))
-as NAZWA, TERYT_ULICA
-	FROM [NCB_MIG].[dbo].[TERYT_PNA]
-	WHERE  LEN(TERYT_ULICA) = 5
+	SELECT	distinct SYM AS  TERYT_MIEJ_SIMC,
+		TRIM(REPLACE([dbo].[UsuwanieNieliter](REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(concat(CECHA,' ', NAZWA_1) , N'ALEJA', 'AL '), N'ALEJE' , N'AL '), 'PLAC', 'PL '), '-GO ',' '),' GO ',' '), N'ŒWIÊTEGO', N'ŒW '), N'ŒWIÊTEJ', N'ŒW '), N'KSIÊDZA', N'KS '), N'BOHATERÓW', N'BOH '), N'GENERA£A', N'GEN '), N'PU£KOWNIKA', N'P£K '),N'OSIEDLE', N'OS ')),'UL ', ''))
+		as NAZWA, 
+		SYM_UL AS TERYT_ULICA
+	FROM CRS.zrodlo.TERYT_ULIC
+	WHERE  LEN(SYM_UL) = 5
   ),	
   
   P as(
